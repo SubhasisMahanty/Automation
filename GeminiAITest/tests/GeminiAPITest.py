@@ -1,4 +1,4 @@
-#genai.configure(api_key="AIzaSyAuqi4l_Od15xJWZfqZY2poOppgVFGwUyQ")
+
 # Start a new chat session
 # app.py
 from flask import Flask, render_template, request, jsonify
