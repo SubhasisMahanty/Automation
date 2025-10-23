@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI Chatbot</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- jQuery for AJAX -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4CAF50; /* A friendly green, adjustable */
+            --secondary-color: #2196F3; /* A bright blue, adjustable */
+            --accent-color: #FFC107; /* A subtle accent, adjustable */
+            --bg-dark-main: #1a1a2e; /* Dark background */
+            --bg-dark-light: #2c2c4d; /* Slightly lighter dark for components */
+            --text-color-light: #e0e0e0;
+            --text-color-faded: #a0a0a0;
+            --message-bg-user: #007bff;
+            --message-bg-bot: #343a40;
+            --border-radius-lg: 15px;
+            --border-radius-sm: 8px;
+            --font-main: 'Roboto', sans-serif;
+            --font-heading: 'Montserrat', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--font-main);
+            color: var(--text-color-light);
+            line-height: 1.6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e); /* Dark, techy gradient */
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            overflow: hidden; /* Ensure no scrollbars on body */
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column; /* Stack header, chatbox, input vertically */
+            width: 90%;
+            max-width: 900px;
+            height: 90vh; /* Make the container take up most of the viewport height */
+            background-color: rgba(0, 0, 0, 0.6); /* Slightly transparent dark background */
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 15px 40px rgba(0, 255, 255, 0.2), 0 0 20px rgba(106, 17, 203, 0.1); /* Subtle glowing shadow */
+            backdrop-filter: blur(10px); /* Frosted glass effect */
+            padding: 25px;
+            box-sizing: border-box; /* Include padding in height */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        header {
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        header h1 {
+            font-family: var(--font-heading);
+            font-size: 2.8em;
+            color: white;
+            margin: 0;
+            text-shadow: 0 3px 8px rgba(0, 0, 0, 0.7);
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-color-faded);
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .chatbox {
+            flex-grow: 1; /* Allow chatbox to take up available space */
+            padding: 15px;
+            background-color: var(--bg-dark-light);
+            border-radius: var(--border-radius-sm);
+            overflow-y: auto; /* Enable scrolling for chat messages */
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.4);
+            flex-shrink: 1; /* Allow chatbox to shrink if needed */
+        }
+
+        /* Styling for markdown elements within bot messages */
+        .message.bot p { margin-bottom: 0.5em; } /* Adjust paragraph spacing */
+        .message.bot ul, .message.bot ol {
+            margin-left: 20px;
+            padding-left: 0;
+            list-style-type: disc; /* Default list style */
+        }
+        .message.bot ol {
+            list-style-type: decimal;
+        }
+        .message.bot li {
+            margin-bottom: 5px;
+        }
+        .message.bot pre {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+        .message.bot code {
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .message.bot h1, .message.bot h2, .message.bot h3 {
+            color: white;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-family: var(--font-heading);
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: var(--border-radius-sm);
+            line-height: 1.5;
+            animation: fadeIn 0.4s ease-out;
+            word-wrap: break-word; /* Ensure long words break */
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--message-bg-user);
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: var(--message-bg-bot);
+            color: var(--text-color-light);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(52, 58, 64, 0.3);
+        }
+
+        .message strong {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 700;
+            color: white; /* Ensure name stands out */
+        }
+
+        .message.bot .generated-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius-sm);
+            margin-top: 10px;
+            display: block; /* Ensures it takes full width within message bubble */
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0; /* Prevent input area from shrinking */
+        }
+
+        #user_input {
+            flex-grow: 1;
+            padding: 14px 20px;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            background-color: var(--bg-dark-light);
+            color: var(--text-color-light);
+            font-size: 1.05em;
+            outline: none;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease, border 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #user_input::placeholder {
+            color: var(--text-color-faded);
+        }
+
+        #user_input:focus {
+            background-color: #3a3a5e; /* Slightly lighter on focus */
+            box-shadow: 0 0 0 2px var(--primary-color), 0 0 15px rgba(var(--primary-color), 0.5); /* Glowing effect */
+            border-color: var(--primary-color);
+        }
+
+        button {
+            padding: 14px 28px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            outline: none;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Scrollbar styling */
+        .chatbox::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chatbox::-webkit-scrollbar-track {
+            background: var(--bg-dark-light);
+            border-radius: 10px;
+        }
+
+        .chatbox::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+            transition: background 0.3s ease;
+        }
+
+        .chatbox::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                height: 95vh;
+                margin: 0;
+                padding: 15px;
+                border-radius: 0; /* Full width/height on small screens */
+            }
+            header h1 {
+                font-size: 2em;
+            }
+            .input-area {
+                flex-direction: column;
+                gap: 8px;
+            }
+            button {
+                width: 100%;
+                padding: 12px 20px;
+            }
+            #user_input {
+                padding: 12px 15px;
+                font-size: 1em;
+            }
+            .chatbox {
+                margin-bottom: 15px;
+                padding: 10px;
+                gap: 8px;
+            }
+            .message {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><i class="fas fa-gem"></i> Gemini AI Chatbot</h1>
+        <p>Your intelligent assistant powered by Google Gemini.</p>
+    </header>
+
+    <div class="chatbox" id="chatbox">
+        <!-- Initial welcome message -->
+        <div class="message bot">
+            <strong>Bot:</strong> Hello! I'm Gemini, your AI assistant. You can ask me questions or try generating an image! <br>Type "/image a cat wearing a hat" to try.
+        </div>
+        <!-- Chat messages will be appended here by JavaScript -->
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="user_input" placeholder="Type your message here... (e.g., /image a dog in space)" autofocus>
+        <button onclick="handleUserInput()"><i class="fas fa-paper-plane"></i> Send</button>
+    </div>
+</div>
+
+<script>
+    marked.setOptions({
+        gfm: true,
+        breaks: true,
+        sanitize: true
+    });
+
+    $(document).ready(function() {
+        $('#user_input').keypress(function(e) {
+            if (e.which == 13) {
+                handleUserInput();
+                return false;
+            }
+        });
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+    });
+
+    function appendMessage(sender, content, type = 'text') {
+        var messageHtml = '';
+        if (type === 'text') {
+            var parsedContent = marked.parse(content);
+            messageHtml = '<div class="message ' + sender + '"><strong>' + (sender === 'user' ? 'You' : 'Bot') + ':</strong> ' + parsedContent + '</div>';
+        } else if (type === 'image') {
+            messageHtml = '<div class="message ' + sender + '"><strong>' + (sender === 'user' ? 'You' : 'Bot') + ':</strong> <img src="' + content + '" alt="Generated Image" class="generated-image"></div>';
+        }
+        $('#chatbox').append(messageHtml);
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+    }
+
+    function handleUserInput() {
+        var message = $('#user_input').val().trim();
+        if (message === '') return;
+
+        appendMessage('user', message); // Display user's message
+        $('#user_input').val(''); // Clear input
+
+        // Check if it's an image generation command
+        if (message.toLowerCase().startsWith('/image ')) {
+            var imagePrompt = message.substring('/image '.length);
+            sendImageRequest(imagePrompt);
+        } else {
+            // Otherwise, send as a regular chat message
+            sendTextMessage(message);
+        }
+    }
+
+    function showLoadingIndicator() {
+        $('#chatbox').append('<div class="message bot" id="loading-indicator"><strong>Bot:</strong> Thinking...</div>');
+        $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
+    }
+
+    function hideLoadingIndicator() {
+        $('#loading-indicator').remove();
+    }
+
+    function sendTextMessage(message) {
+        showLoadingIndicator();
+
+        $.ajax({
+            url: '/chat',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 'message': message }),
+            success: function(data) {
+                hideLoadingIndicator();
+                if (data.error) {
+                    appendMessage('bot', '<span style="color:red;">Error: ' + data.error + '</span>');
+                } else {
+                    appendMessage('bot', data.response, 'text');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoadingIndicator();
+                appendMessage('bot', '<span style="color:red;">Error: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Could not connect to server.') + '</span>');
+                console.error("AJAX Error:", status, error, xhr.responseText);
+            }
+        });
+    }
+
+    function sendImageRequest(prompt) {
+        showLoadingIndicator();
+
+        $.ajax({
+            url: '/generate_image',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ 'prompt': prompt }),
+            success: function(data) {
+                hideLoadingIndicator();
+                if (data.error) {
+                    appendMessage('bot', '<span style="color:red;">Error generating image: ' + data.error + '</span>');
+                } else {
+                    appendMessage('bot', data.image_url, 'image'); // Display the image
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoadingIndicator();
+                appendMessage('bot', '<span style="color:red;">Error generating image: ' + (xhr.responseJSON ? xhr.responseJSON.error : 'Could not connect to server.') + '</span>');
+                console.error("Image AJAX Error:", status, error, xhr.responseText);
+            }
+        });
+    }
+</script>
+</body>
+</html>
